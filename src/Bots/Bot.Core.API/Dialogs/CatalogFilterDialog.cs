@@ -3,6 +3,7 @@ using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Schema;
 using Microsoft.eShopOnContainers.Bot.API.Extensions;
 using Microsoft.eShopOnContainers.Bot.API.Services;
+using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,13 +17,15 @@ namespace Microsoft.eShopOnContainers.Bot.API.Dialogs
 
         public const string Id = "PromptBrands";
         private const string PromptTypes = "PromptTypes";
+        private readonly IOptions<AppSettings> appSettings;
         private readonly ICatalogService catalog;
-        private readonly IProductSearchImageService productSearchImageService;
+        private readonly ICatalogFilterDialogService catalogFilterDialogService;
 
-        public CatalogFilterDialog(ICatalogService catalogService, IProductSearchImageService productSearchImageService, IDialogFactory dialogFactory) : base(Id)
+        public CatalogFilterDialog(IOptions<AppSettings> appSettings, ICatalogService catalogService, ICatalogFilterDialogService catalogFilterDialogService, IDialogFactory dialogFactory) : base(Id)
         {
+            this.appSettings = appSettings;
             catalog = catalogService;
-            this.productSearchImageService = productSearchImageService;
+            this.catalogFilterDialogService = catalogFilterDialogService;
 
             this.Dialogs.AddCatalogDialog(dialogFactory);
             this.Dialogs.Add(Id, new WaterfallStep[]
@@ -58,7 +61,7 @@ namespace Microsoft.eShopOnContainers.Bot.API.Dialogs
 
             if (dc.Context.Activity.AttachmentContainsImageFile())
             {
-                await dc.Context.UpdateCatalogFilterTagsAsync(productSearchImageService);
+                await catalogFilterDialogService.UpdateCatalogFilterUserStateWithTagsAsync(dc.Context);
                 await dc.Replace(CatalogDialog.Id);
             }
             else
@@ -98,7 +101,7 @@ namespace Microsoft.eShopOnContainers.Bot.API.Dialogs
 
             if (dc.Context.Activity.AttachmentContainsImageFile())
             {
-                await dc.Context.UpdateCatalogFilterTagsAsync(productSearchImageService);
+                await catalogFilterDialogService.UpdateCatalogFilterUserStateWithTagsAsync(dc.Context);
                 await dc.Replace(CatalogDialog.Id);
             }
             else
